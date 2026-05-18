@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CareCircle — Onboarding Test UI v3.0</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+  h2 { color: #1a56db; border-bottom: 2px solid #1a56db; padding-bottom: 8px; }
+  .step { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 16px 0; }
+  .step.active { border-color: #1a56db; background: #eff6ff; }
+  .step.done { border-color: #16a34a; background: #f0fdf4; }
+  label { display: block; margin: 8px 0 4px; font-weight: 600; font-size: 14px; }
+  input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+  button { background: #1a56db; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; margin: 8px 4px 0 0; }
+  button:hover { background: #1e429f; }
+  button.secondary { background: #6b7280; }
+  button.danger { background: #dc2626; }
+  button.success { background: #16a34a; }
+  pre { background: #1f2937; color: #f9fafb; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto; }
+  .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .med-card { background: white; border: 1px solid #d1d5db; border-radius: 8px; padding: 14px; margin: 8px 0; }
+  .med-card.conflict { border-color: #f59e0b; background: #fffbeb; }
+  .med-card.critical { border-color: #dc2626; background: #fef2f2; }
+  /* Concern cards — Phase 6.5 */
+  .concern-card { background: white; border-left: 4px solid #d1d5db; border-radius: 6px; padding: 14px; margin: 8px 0; }
+  .concern-card.critical_concern { border-left-color: #E24B4A; }
+  .concern-card.high_priority    { border-left-color: #EF9F27; }
+  .concern-card.moderate         { border-left-color: #378ADD; }
+  .concern-card.for_your_awareness { border-left-color: #888780; }
+  .priority-section { margin: 20px 0; }
+  .priority-header { font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 6px; margin-bottom: 10px; display: inline-block; }
+  .ph-critical_concern   { background: #fee2e2; color: #991b1b; }
+  .ph-high_priority      { background: #ffedd5; color: #9a3412; }
+  .ph-moderate           { background: #dbeafe; color: #1e3a8a; }
+  .ph-for_your_awareness { background: #f3f4f6; color: #374151; }
+  .concern-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-right: 6px; }
+  .badge-critical_concern   { background: #fee2e2; color: #991b1b; }
+  .badge-high_priority      { background: #ffedd5; color: #9a3412; }
+  .badge-moderate           { background: #dbeafe; color: #1e3a8a; }
+  .badge-for_your_awareness { background: #f3f4f6; color: #374151; }
+  .partial-match-note { background: #FAEEDA; color: #854F0B; border-radius: 6px; padding: 4px 10px; font-size: 12px; margin-bottom: 8px; display: inline-block; }
+  .summary-pill { display: inline-block; padding: 4px 12px; border-radius: 14px; font-size: 13px; font-weight: 600; margin: 4px; }
+  .pill-red   { background: #fee2e2; color: #991b1b; }
+  .pill-amber { background: #ffedd5; color: #9a3412; }
+  .pill-blue  { background: #dbeafe; color: #1e3a8a; }
+  .pill-gray  { background: #f3f4f6; color: #374151; }
+  /* Legacy medication card styles */
+  .severity-critical { color: #dc2626; font-weight: 700; }
+  .severity-high { color: #ea580c; font-weight: 700; }
+  .severity-moderate { color: #d97706; font-weight: 600; }
+  .severity-low { color: #16a34a; }
+  .dedup-merged { background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .dedup-conflict { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .dedup-critical { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .action-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .action-row select { width: auto; padding: 4px 8px; font-size: 13px; }
+  #log { margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h1>CareCircle — Onboarding Test UI <span style="font-size:14px;color:#6b7280">v3.0</span></h1>
+<p>
+  Base URL: <input id="baseUrl" value="http://localhost:8001" style="width:240px">
+  &nbsp; Token: <input id="token" placeholder="Paste JWT token here" style="width:360px">
+</p>
+
+<!-- Step 1: Set Role -->
+<div class="step active" id="step1">
+  <h2>Step 1: Set Role</h2>
+  <label>Full Name</label><input id="fullName" value="Meera Sharma">
+  <label>Role</label>
+  <select id="role">
+    <option value="guardian">Guardian</option>
+    <option value="caregiver">Caregiver</option>
+  </select>
+  <label>Relationship</label><input id="relationship" value="daughter">
+  <label>Phone</label><input id="phone" value="9876543210">
+  <button onclick="setRole()">Set Role</button>
+  <pre id="out1"></pre>
+</div>
+
+<!-- Step 2: Submit Onboarding -->
+<div class="step" id="step2">
+  <h2>Step 2: Submit Onboarding Form</h2>
+  <label>Patient Full Name</label><input id="patientName" value="Rajesh Kumar">
+  <label>Date of Birth</label><input id="dob" type="date" value="1959-03-15">
+  <label>Gender</label>
+  <select id="gender"><option value="male">Male</option><option value="female">Female</option></select>
+  <label>City</label><input id="city" value="Lucknow">
+  <label>State</label><input id="state" value="Uttar Pradesh">
+  <label>Conditions (one per line)</label>
+  <textarea id="conditions" rows="3">Type 2 Diabetes
+Hypertension</textarea>
+  <label>Medications (one per line: name,dose,frequency)</label>
+  <textarea id="meds" rows="3">Metformin,500mg,twice daily
+Amlodipine,5mg,once daily</textarea>
+  <label>Allergies (one per line)</label>
+  <textarea id="allergies" rows="2">Penicillin</textarea>
+  <label>Primary Doctor (name,specialty,hospital)</label>
+  <input id="doctor" value="Dr. Sharma,Cardiologist,Apollo Hospital">
+  <label>Prescription (image or PDF)</label>
+  <input type="file" id="fileRx" accept="image/*,.pdf">
+  <label>Lab Report (PDF or image)</label>
+  <input type="file" id="fileLab" accept="image/*,.pdf">
+  <label>Discharge Summary (PDF or image)</label>
+  <input type="file" id="fileDischarge" accept="image/*,.pdf">
+  <button onclick="submitOnboarding()">Submit</button>
+  <pre id="out2"></pre>
+</div>
+
+<!-- Step 3: Status Polling (waiting for medication_verification_needed) -->
+<div class="step" id="step3">
+  <h2>Step 3: Processing Status</h2>
+  <p>Patient ID: <strong id="patientIdDisplay">—</strong></p>
+  <p>Status: <strong id="currentStatus">—</strong></p>
+  <button onclick="startPolling('medication_verification_needed', 'step4')">Start Polling</button>
+  <button class="secondary" onclick="stopPolling()">Stop</button>
+  <pre id="out3"></pre>
+</div>
+
+<!-- Step 4: Screen 4 — Medication Verification -->
+<div class="step" id="step4">
+  <h2>Step 4: Medication Verification <span style="font-size:13px;color:#6b7280">(Screen 4)</span></h2>
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:16px;font-size:14px;color:#1e3a8a">
+    We read your documents and found the medications below.<br>
+    <strong>Please check each one:</strong> tap <b>Yes</b> if you're still taking it, <b>No</b> if you've stopped, or <b>Edit</b> if we got the name or dose wrong.
+  </div>
+  <button onclick="loadMedications()">Load Medications</button>
+  <div id="medList"></div>
+  <button class="success" onclick="confirmMedications()" style="margin-top:16px">Done — Start Analysis</button>
+  <pre id="out4"></pre>
+</div>
+
+<!-- Step 5: Polling for findings_ready -->
+<div class="step" id="step5">
+  <h2>Step 5: Analysis Running</h2>
+  <p>Status: <strong id="currentStatus2">analysis_running</strong></p>
+  <button onclick="startPolling2()">Poll for Findings Ready</button>
+  <button class="secondary" onclick="stopPolling()">Stop</button>
+  <pre id="out5"></pre>
+</div>
+
+<!-- Step 6: Screen 5 — Findings (Phase 6.5 concern cards) -->
+<div class="step" id="step6">
+  <h2>Step 6: Clinical Findings <span style="font-size:13px;color:#6b7280">(Screen 5)</span></h2>
+  <button onclick="loadFindings()">Load Findings</button>
+  <div id="findingsSummary" style="margin:12px 0;padding:12px;background:white;border-radius:8px;border:1px solid #e5e7eb;display:none">
+    <div id="concernCountLine" style="font-weight:600;margin-bottom:8px;color:#111"></div>
+    <div id="concernPills"></div>
+  </div>
+  <div id="findingsList"></div>
+  <button class="success" onclick="confirmOnboarding()" style="margin-top:16px">I have reviewed everything</button>
+  <pre id="out6"></pre>
+</div>
+
+<!-- Complete -->
+<div class="step" id="step7">
+  <h2>Onboarding Complete</h2>
+  <pre id="out7"></pre>
+</div>
+
+<div id="log"><h2>Log</h2><pre id="logOut"></pre></div>
+
+<script>
+let patientId = null;
+let pollingTimer = null;
+let loadedMeds = [];
+let medActions = {};
+let siblingMap = {}; // representative med id -> [all sibling ids sharing same generic]
+
+function base() { return document.getElementById('baseUrl').value; }
+function tok() { return document.getElementById('token').value; }
+function authHeaders() { return { 'Authorization': 'Bearer ' + tok() }; }
+function jsonHeaders() { return { 'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json' }; }
+function log(msg) {
+  const el = document.getElementById('logOut');
+  el.textContent = new Date().toLocaleTimeString() + ' — ' + msg + '\n' + el.textContent;
+}
+function show(id, data) { document.getElementById(id).textContent = JSON.stringify(data, null, 2); }
+function activateStep(id) { document.getElementById(id).classList.add('active'); document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+
+// ---- Step 1: Set Role ----
+async function setRole() {
+  const res = await fetch(base() + '/api/auth/set-role', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      role: document.getElementById('role').value,
+      full_name: document.getElementById('fullName').value,
+      relationship: document.getElementById('relationship').value,
+      phone: document.getElementById('phone').value,
+    })
+  });
+  const data = await res.json();
+  show('out1', data);
+  log('Role set: ' + (data.role || 'unknown'));
+  document.getElementById('step1').classList.add('done');
+  activateStep('step2');
+}
+
+// ---- Step 2: Submit Onboarding ----
+async function submitOnboarding() {
+  const fd = new FormData();
+  fd.append('full_name', document.getElementById('patientName').value);
+  fd.append('date_of_birth', document.getElementById('dob').value);
+  fd.append('gender', document.getElementById('gender').value);
+  fd.append('city', document.getElementById('city').value);
+  fd.append('state', document.getElementById('state').value);
+
+  const conditions = document.getElementById('conditions').value.split('\n').filter(Boolean);
+  fd.append('conditions', JSON.stringify(conditions));
+
+  const meds = document.getElementById('meds').value.split('\n').filter(Boolean).map(line => {
+    const parts = line.split(',').map(s => s.trim());
+    return { drug_name: parts[0], dosage: parts[1] || '', frequency: parts[2] || '' };
+  });
+  fd.append('medications', JSON.stringify(meds));
+
+  const allergies = document.getElementById('allergies').value.split('\n').filter(Boolean).map(a => ({ allergen: a.trim() }));
+  fd.append('allergies', JSON.stringify(allergies));
+
+  const [name, specialty, hospital] = document.getElementById('doctor').value.split(',').map(s => s.trim());
+  fd.append('doctors', JSON.stringify([{ name, specialty, hospital, is_primary: true }]));
+
+  const fileTypes = [];
+  const rxFile = document.getElementById('fileRx').files[0];
+  const labFile = document.getElementById('fileLab').files[0];
+  const dischargeFile = document.getElementById('fileDischarge').files[0];
+  if (rxFile) { fd.append('files', rxFile); fileTypes.push('prescription'); }
+  if (labFile) { fd.append('files', labFile); fileTypes.push('lab_report'); }
+  if (dischargeFile) { fd.append('files', dischargeFile); fileTypes.push('discharge_summary'); }
+  fd.append('file_types', JSON.stringify(fileTypes));
+
+  const res = await fetch(base() + '/api/onboarding/submit', {
+    method: 'POST', headers: authHeaders(), body: fd
+  });
+  const data = await res.json();
+  show('out2', data);
+  if (data.patient_id) {
+    patientId = data.patient_id;
+    document.getElementById('patientIdDisplay').textContent = patientId;
+    log('Submitted — patient_id: ' + patientId);
+    document.getElementById('step2').classList.add('done');
+    activateStep('step3');
+  } else {
+    log('Submit error: ' + JSON.stringify(data));
+  }
+}
+
+// ---- Step 3: Poll until medication_verification_needed ----
+function startPolling(targetStatus, nextStepId) {
+  stopPolling();
+  pollingTimer = setInterval(async () => {
+    try {
+      const res = await fetch(base() + '/api/onboarding/status/' + patientId, { headers: authHeaders() });
+      const data = await res.json();
+      document.getElementById('currentStatus').textContent = data.status;
+      show('out3', data);
+      log('Status: ' + data.status);
+      if (data.status === targetStatus) {
+        stopPolling();
+        document.getElementById('step3').classList.add('done');
+        activateStep(nextStepId);
+      }
+    } catch (e) { log('Poll error: ' + e.message); }
+  }, 3000);
+}
+function stopPolling() { if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; } }
+
+// ---- Step 4: Load & Verify Medications (Screen 4) ----
+async function loadMedications() {
+  const res = await fetch(base() + '/api/onboarding/extracted_medications/' + patientId, { headers: authHeaders() });
+  const data = await res.json();
+  show('out4', data);
+  loadedMeds = data.medications || [];
+  medActions = {};
+
+  const list = document.getElementById('medList');
+  if (loadedMeds.length === 0) {
+    list.innerHTML = '<p style="color:#6b7280">No medications found.</p>';
+    return;
+  }
+
+  // UI-level dedup by generic name — show one card per unique drug.
+  // If multiple entries share the same generic (e.g. status_conflict), keep the best one
+  // (guardian_stated preferred, then highest confidence) and map all sibling IDs to the same action.
+  const genericMap = {}; // generic_key -> representative med
+  const siblingMap = {}; // representative med id -> [all sibling ids]
+  loadedMeds.forEach(m => {
+    const key = (m.drug_name_generic || m.drug_name_brand || '').toLowerCase().trim();
+    if (!genericMap[key]) {
+      genericMap[key] = m;
+      siblingMap[m.medication_id] = [m.medication_id];
+    } else {
+      const existing = genericMap[key];
+      // Prefer guardian_stated as display name, else higher confidence
+      if (m.source === 'guardian_stated' && existing.source !== 'guardian_stated') {
+        siblingMap[m.medication_id] = siblingMap[existing.medication_id].concat([m.medication_id]);
+        delete siblingMap[existing.medication_id];
+        genericMap[key] = m;
+      } else {
+        siblingMap[existing.medication_id].push(m.medication_id);
+      }
+    }
+  });
+  // The de-duped list to render
+  const displayMeds = Object.values(genericMap);
+
+  // Group dose-conflict pairs by generic name so we can render them together
+  const doseConflictGroups = {};
+  loadedMeds.forEach(m => {
+    if (m.dedup_status === 'dose_conflict') {
+      const key = (m.drug_name_generic || m.drug_name_brand || '').toLowerCase();
+      if (!doseConflictGroups[key]) doseConflictGroups[key] = [];
+      doseConflictGroups[key].push(m);
+    }
+  });
+  const renderedIds = new Set();
+
+  let html = '';
+  displayMeds.forEach(m => {
+    if (renderedIds.has(m.medication_id)) return;
+    medActions[m.medication_id] = { action: 'confirm' };
+
+    const brandName = m.drug_name_brand || m.drug_name || '(unknown)';
+    const genericName = m.drug_name_generic && m.drug_name_generic.toLowerCase() !== brandName.toLowerCase()
+      ? m.drug_name_generic : null;
+    const displayName = brandName;
+
+    // Dose conflict group — render as a "which dose?" card
+    if (m.dedup_status === 'dose_conflict') {
+      const key = (m.drug_name_generic || m.drug_name_brand || '').toLowerCase();
+      const group = doseConflictGroups[key] || [m];
+      group.forEach(gm => renderedIds.add(gm.medication_id));
+
+      html += `<div class="med-card" style="border-color:#f59e0b;background:#fffbeb">
+        <div style="font-size:12px;color:#92400e;font-weight:600;margin-bottom:8px">
+          ⚠ We found <strong>${escHtml(genericName || displayName)}</strong> with ${group.length} different doses in your documents. Which one are you currently taking?
+        </div>
+        ${group.map(gm => {
+          medActions[gm.medication_id] = { action: 'remove' }; // default to remove, user picks one
+          const dose = gm.dose_text || gm.dosage || '(dose not found)';
+          const freq = gm.frequency || '';
+          return `<label style="display:flex;align-items:center;gap:10px;padding:8px;background:white;border:1px solid #e5e7eb;border-radius:6px;margin:4px 0;cursor:pointer">
+            <input type="radio" name="dosegroup_${key}" value="${gm.medication_id}"
+              onchange="selectDoseOption('${key}', '${gm.medication_id}', ${JSON.stringify(group.map(x=>x.medication_id))})">
+            <span><strong>${escHtml(dose)}</strong>${freq ? ' · ' + escHtml(freq) : ''}</span>
+          </label>`;
+        }).join('')}
+        <div style="font-size:12px;color:#6b7280;margin-top:6px">If neither is correct, select the closest and use Edit below to fix it.</div>
+      </div>`;
+      return;
+    }
+
+    renderedIds.add(m.medication_id);
+    const extractedDose = m.dose_text || m.dosage || '';
+    const extractedFreq = m.frequency || '';
+
+    html += `<div class="med-card" id="medcard_${m.medication_id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <strong style="font-size:15px">${escHtml(displayName)}</strong>
+          ${genericName ? `<span style="color:#6b7280;font-size:12px"> (${escHtml(genericName)})</span>` : ''}
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <input id="confirmed_dose_${m.medication_id}" placeholder="Dose (e.g. 500mg)"
+              style="width:48%;font-size:12px;padding:4px 8px" value="${escHtml(extractedDose)}">
+            <input id="confirmed_freq_${m.medication_id}" placeholder="Frequency"
+              style="width:48%;font-size:12px;padding:4px 8px" value="${escHtml(extractedFreq)}">
+          </div>
+        </div>
+        <div style="flex-shrink:0;margin-left:14px;text-align:center">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:4px">Currently taking?</div>
+          <div style="display:flex;gap:4px">
+            <button onclick="setTaking('${m.medication_id}', 'yes')" id="btn_yes_${m.medication_id}"
+              style="padding:5px 10px;font-size:12px;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer">
+              ✓ Yes
+            </button>
+            <button onclick="setTaking('${m.medication_id}', 'no')" id="btn_no_${m.medication_id}"
+              style="padding:5px 10px;font-size:12px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer">
+              ✗ No
+            </button>
+            <button onclick="setTaking('${m.medication_id}', 'not_sure')" id="btn_ns_${m.medication_id}"
+              style="padding:5px 10px;font-size:12px;background:#6b7280;color:white;border:none;border-radius:6px;cursor:pointer">
+              ? Not sure
+            </button>
+          </div>
+          <button onclick="toggleEdit('${m.medication_id}')" id="btn_edit_${m.medication_id}"
+            style="margin-top:4px;padding:4px 10px;font-size:11px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;cursor:pointer;width:100%">
+            ✎ Fix name
+          </button>
+        </div>
+      </div>
+      <div id="editpanel_${m.medication_id}" style="display:none;margin-top:10px;padding:10px;background:#f9fafb;border-radius:6px">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:6px">Correct the drug name if we got it wrong:</div>
+        <input placeholder="Correct drug name" style="width:100%" id="edit_name_${m.medication_id}" value="${escHtml(displayName)}">
+      </div>
+    </div>`;
+  });
+
+  list.innerHTML = html;
+  log('Loaded ' + loadedMeds.length + ' medications for verification');
+}
+
+function setTaking(medId, status) {
+  // status: 'yes' | 'no' | 'not_sure'
+  const guardianStatusMap = { yes: 'yes_currently_taking', no: 'no_stopped', not_sure: 'not_sure' };
+  const guardianStatus = guardianStatusMap[status] || 'not_sure';
+  const siblings = siblingMap[medId] || [medId];
+  siblings.forEach(id => { medActions[id] = { action: 'confirm', guardian_taking_status: guardianStatus }; });
+  const card = document.getElementById('medcard_' + medId);
+  if (card) card.style.opacity = status === 'no' ? '0.5' : '1';
+  const yesBtn = document.getElementById('btn_yes_' + medId);
+  const noBtn  = document.getElementById('btn_no_' + medId);
+  const nsBtn  = document.getElementById('btn_ns_' + medId);
+  if (yesBtn) yesBtn.style.outline = status === 'yes'      ? '3px solid #15803d' : 'none';
+  if (noBtn)  noBtn.style.outline  = status === 'no'       ? '3px solid #b91c1c' : 'none';
+  if (nsBtn)  nsBtn.style.outline  = status === 'not_sure' ? '3px solid #374151' : 'none';
+}
+
+function selectDoseOption(groupKey, selectedId, allIds) {
+  allIds.forEach(id => {
+    medActions[id] = { action: id === selectedId ? 'confirm' : 'remove' };
+  });
+}
+
+function toggleEdit(medId) {
+  const panel = document.getElementById('editpanel_' + medId);
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  medActions[medId] = medActions[medId] || {};
+  medActions[medId].action = 'edit';
+}
+
+async function confirmMedications() {
+  // Send actions for ALL loaded meds (siblings inherit the action set by setTaking)
+  const confirmed = loadedMeds.map(m => {
+    const a = medActions[m.medication_id] || { action: 'confirm', guardian_taking_status: 'not_sure' };
+    const item = { medication_id: m.medication_id, action: a.action };
+    if (a.guardian_taking_status) item.guardian_taking_status = a.guardian_taking_status;
+    // Guardian-confirmed dose and frequency from the card inputs
+    const confDose = document.getElementById('confirmed_dose_' + m.medication_id)?.value?.trim();
+    const confFreq = document.getElementById('confirmed_freq_' + m.medication_id)?.value?.trim();
+    if (confDose) item.guardian_confirmed_dose_text = confDose;
+    if (confFreq) item.guardian_confirmed_frequency = confFreq;
+    if (a.action === 'edit') {
+      const name = document.getElementById('edit_name_' + m.medication_id)?.value;
+      item.updated_fields = {};
+      if (name) item.updated_fields.drug_name_brand = name;
+    }
+    return item;
+  });
+
+  const res = await fetch(base() + '/api/onboarding/confirm_medications/' + patientId, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmed_medications: confirmed, added_medications: [] })
+  });
+  const data = await res.json();
+  show('out4', data);
+
+  if (data.status === 'analysis_running') {
+    log('Medications confirmed — analysis running (' + data.medications_confirmed + ' confirmed)');
+    document.getElementById('step4').classList.add('done');
+    activateStep('step5');
+  } else {
+    log('Confirm medications response: ' + JSON.stringify(data));
+  }
+}
+
+// ---- Step 5: Poll until findings_ready ----
+function startPolling2() {
+  stopPolling();
+  pollingTimer = setInterval(async () => {
+    try {
+      const res = await fetch(base() + '/api/onboarding/status/' + patientId, { headers: authHeaders() });
+      const data = await res.json();
+      document.getElementById('currentStatus2').textContent = data.status;
+      show('out5', data);
+      log('Status: ' + data.status);
+      if (data.status === 'findings_ready' || data.status === 'complete') {
+        stopPolling();
+        document.getElementById('step5').classList.add('done');
+        activateStep('step6');
+      }
+    } catch (e) { log('Poll error: ' + e.message); }
+  }, 4000);
+}
+
+// ---- Step 6: Load Findings (Screen 5 — Phase 6.5 concern cards) ----
+async function loadFindings() {
+  const res = await fetch(base() + '/api/onboarding/findings/' + patientId, { headers: authHeaders() });
+  const data = await res.json();
+  show('out6', data);
+
+  if (data.status === 'running') {
+    log('Findings still running — poll again');
+    return;
+  }
+
+  const concerns = data.concerns || [];
+  const cs = data.concern_summary || {};
+
+  // Summary header
+  const summaryEl = document.getElementById('findingsSummary');
+  summaryEl.style.display = 'block';
+
+  const hasPartial = concerns.some(c => c.concern_type === 'partial_match_source');
+  const countLine = 'We found ' + concerns.length + ' concern' + (concerns.length !== 1 ? 's' : '') + '.'
+    + (hasPartial ? ' Some findings are shown separately to preserve all information.' : '');
+  document.getElementById('concernCountLine').textContent = countLine;
+
+  const pillsHtml = [
+    cs.critical_concern > 0 ? `<span class="summary-pill pill-red">${cs.critical_concern} critical concern${cs.critical_concern !== 1 ? 's' : ''}</span>` : '',
+    cs.high_priority > 0    ? `<span class="summary-pill pill-amber">${cs.high_priority} high priority</span>` : '',
+    cs.moderate > 0         ? `<span class="summary-pill pill-blue">${cs.moderate} moderate</span>` : '',
+    cs.for_your_awareness > 0 ? `<span class="summary-pill pill-gray">${cs.for_your_awareness} for your awareness</span>` : '',
+  ].filter(Boolean).join('');
+  document.getElementById('concernPills').innerHTML = pillsHtml;
+
+  if (concerns.length === 0) {
+    document.getElementById('findingsList').innerHTML =
+      '<p style="color:#6b7280;font-style:italic">We reviewed all records. No concerning findings were identified at this time.</p>';
+    log('Findings loaded — no concerns');
+    return;
+  }
+
+  const PRIORITY_ORDER = ['critical_concern', 'high_priority', 'moderate', 'for_your_awareness'];
+  const PRIORITY_LABELS = {
+    critical_concern:   'Critical concern',
+    high_priority:      'High priority',
+    moderate:           'Needs attention',
+    for_your_awareness: 'For your awareness',
+  };
+  const TYPE_LABEL_SUFFIX = {
+    grouped:             '— grouped',
+    independent:         '— independent',
+    partial_match_source:'— independent',
+  };
+
+  // Group concerns by priority
+  const byPriority = {};
+  for (const p of PRIORITY_ORDER) byPriority[p] = [];
+  for (const c of concerns) {
+    const p = c.priority || 'for_your_awareness';
+    if (!byPriority[p]) byPriority[p] = [];
+    byPriority[p].push(c);
+  }
+
+  const list = document.getElementById('findingsList');
+  const sections = PRIORITY_ORDER
+    .filter(p => byPriority[p].length > 0)
+    .map(p => {
+      const cards = byPriority[p].map(c => {
+        const badge = `<span class="concern-badge badge-${p}">${PRIORITY_LABELS[p]} ${TYPE_LABEL_SUFFIX[c.concern_type] || ''}</span>`;
+        const partialNote = c.concern_type === 'partial_match_source'
+          ? `<div><span class="partial-match-note">Shown separately — could not be fully grouped without risk of losing information</span></div>`
+          : '';
+        const evidenceHtml = (c.evidence || []).map(e =>
+          `<li style="font-size:11px;color:#6b7280">${escHtml(e.entity)}${e.source ? ' · ' + escHtml(e.source) : ''}${e.date ? ' · ' + escHtml(e.date) : ''}</li>`
+        ).join('');
+        const sourceList = (c.source_documents || []).length > 0
+          ? `<p style="margin:4px 0;font-size:11px;color:#9ca3af">Sources: ${escHtml(c.source_documents.join(', '))}</p>`
+          : '';
+
+        return `<div class="concern-card ${p}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <strong style="font-size:15px">${escHtml(c.title)}</strong>
+            ${badge}
+          </div>
+          ${partialNote}
+          <p style="margin:0 0 6px;font-size:13px;color:#6b7280;font-style:italic">${escHtml(c.summary)}</p>
+          <p style="margin:4px 0;font-size:13px;color:#374151"><strong>Found:</strong> ${escHtml(c.what_was_found)}</p>
+          <p style="margin:4px 0;font-size:13px;color:#374151"><strong>Why it matters:</strong> ${escHtml(c.why_it_matters)}</p>
+          <p style="margin:4px 0;font-size:13px;color:#1e40af"><strong>What to do:</strong> ${escHtml(c.what_to_do)}</p>
+          ${evidenceHtml ? `<ul style="margin:6px 0 0;padding-left:18px">${evidenceHtml}</ul>` : ''}
+          ${sourceList}
+        </div>`;
+      }).join('');
+
+      return `<div class="priority-section">
+        <span class="priority-header ph-${p}">${PRIORITY_LABELS[p]} (${byPriority[p].length})</span>
+        ${cards}
+      </div>`;
+    });
+
+  list.innerHTML = sections.join('');
+
+  // Action summary sections (Phase 6.6)
+  const as = data.action_summary;
+  if (as && (as.do_now?.length || as.follow_up?.length || as.ongoing_monitoring?.length)) {
+    let actionHtml = '<div style="margin-top:28px;border-top:2px solid #e5e7eb;padding-top:20px">';
+    actionHtml += '<h3 style="font-size:16px;color:#1a56db;margin:0 0 16px">Your Action Plan</h3>';
+    if (as.do_now?.length)            actionHtml += renderActionSection('WHAT TO DO NOW', as.do_now, '#dc2626', '#fef2f2');
+    if (as.follow_up?.length)         actionHtml += renderActionSection('FOLLOW-UP NEEDED', as.follow_up, '#d97706', '#fffbeb');
+    if (as.ongoing_monitoring?.length) actionHtml += renderActionSection('ONGOING MONITORING', as.ongoing_monitoring, '#1a56db', '#eff6ff');
+    actionHtml += '</div>';
+    list.innerHTML += actionHtml;
+  }
+
+  log('Findings loaded — ' + concerns.length + ' concerns (' + (cs.critical_concern||0) + ' critical, ' + (cs.high_priority||0) + ' high)');
+}
+
+function renderActionSection(title, items, color, bg) {
+  const itemsHtml = items.map(item => `
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px;margin:6px 0">
+      <div style="font-size:13px;color:#111">${escHtml(item.action)}</div>
+      ${item.reason ? `<details style="margin-top:4px"><summary style="font-size:11px;color:#6b7280;cursor:pointer">Why</summary><div style="font-size:11px;color:#6b7280;padding:4px 0">${escHtml(item.reason)}</div></details>` : ''}
+      ${item.source ? `<div style="font-size:11px;color:#9ca3af;margin-top:3px">${escHtml(item.source)}</div>` : ''}
+    </div>`).join('');
+  return `<div style="margin:16px 0">
+    <div style="font-weight:700;font-size:12px;letter-spacing:.05em;color:${color};background:${bg};padding:5px 12px;border-radius:6px;display:inline-block;margin-bottom:8px">${escHtml(title)}</div>
+    ${itemsHtml}
+  </div>`;
+}
+
+// ---- Step 7: Confirm Complete ----
+async function confirmOnboarding() {
+  const res = await fetch(base() + '/api/onboarding/confirm/' + patientId, {
+    method: 'POST', headers: authHeaders()
+  });
+  const data = await res.json();
+  show('out7', data);
+  log('ONBOARDING COMPLETE — score: ' + data.completeness_score + '% | flags_saved: ' + data.flags_saved);
+  document.querySelectorAll('.step').forEach(s => s.classList.add('done'));
+  activateStep('step7');
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     LONGITUDINAL PIPELINE — Screens L1-L5
+     Run AFTER completing onboarding above (Screen 7 / confirm complete).
+     Paste the same patient_id and token from Screen 1.
+     ═══════════════════════════════════════════════════════════════ -->
+<h2 style="margin-top:56px;border-color:#7c3aed;color:#7c3aed">Longitudinal Pipeline (Post-Onboarding)</h2>
+<p style="color:#6b7280;margin-bottom:24px">Upload new documents after onboarding is complete.</p>
+
+<!-- Screen L1: Upload new documents -->
+<div class="step active" id="step-l1">
+  <h3>Screen L1 — Upload New Documents</h3>
+  <label>Patient ID (same as above)</label>
+  <input id="l-pid" placeholder="paste patient_id here" />
+  <label>Authorization Token (same as above)</label>
+  <input id="l-tok" placeholder="paste Bearer token" />
+
+  <div id="l-file-rows" style="margin:8px 0">
+    <!-- file rows injected by lAddFileRow() -->
+  </div>
+  <button type="button" onclick="lAddFileRow()" style="background:#6b7280;margin-bottom:8px">+ Add Document</button>
+  <br>
+  <button style="background:#7c3aed" onclick="lUpload()">Upload &amp; Start Pipeline</button>
+  <pre id="l-out1"></pre>
+</div>
+
+<!-- Screen L2: Polling (extracting → reconciling) -->
+<div class="step" id="step-l2">
+  <h3>Screen L2 — Pipeline Status (extracting → reconciling)</h3>
+  <p>Auto-polls every 3s after upload. Waiting for <code>reconciling</code>.</p>
+  <pre id="l-out2">Waiting for upload...</pre>
+  <button onclick="lPoll(['reconciling'], 'l-out2', lOnRecon)">Poll Now</button>
+</div>
+
+<!-- Screen L3: Medication reconciliation -->
+<div class="step" id="step-l3">
+  <h3>Screen L3 — Medication Reconciliation (L4 Gate)</h3>
+  <button onclick="lGetRecon()">Load Reconciliation</button>
+
+  <!-- Active medications table -->
+  <div id="l-existing-meds" style="margin:16px 0;display:none">
+    <h4 style="margin:0 0 8px;color:#374151">Current Active Medications</h4>
+    <div id="l-existing-meds-list"></div>
+  </div>
+
+  <!-- New / changed medications with per-card actions -->
+  <div id="l-new-meds" style="margin:16px 0;display:none">
+    <h4 style="margin:0 0 8px;color:#374151">New &amp; Changed Medications Found in Uploaded Documents</h4>
+    <p style="font-size:12px;color:#6b7280;margin:0 0 8px">For each medication below, choose whether the patient is still taking it, stopped, or if you're not sure.</p>
+    <div id="l-new-meds-list"></div>
+  </div>
+
+  <button class="success" id="l-confirm-recon-btn" style="display:none" onclick="lConfirmRecon()">Confirm &amp; Start Analysis</button>
+  <pre id="l-out3"></pre>
+</div>
+
+<!-- Screen L4: Polling (reasoning → orchestrating → ready) -->
+<div class="step" id="step-l4">
+  <h3>Screen L4 — Pipeline Status (reasoning → orchestrating → ready)</h3>
+  <p>Auto-polls every 3s after reconciliation confirmed.</p>
+  <pre id="l-out4">Waiting for reconciliation confirm...</pre>
+  <button onclick="lPoll(['ready'], 'l-out4', lOnReady)">Poll Now</button>
+</div>
+
+<!-- Screen L5: Longitudinal findings -->
+<div class="step" id="step-l5">
+  <h3>Screen L5 — Longitudinal Findings</h3>
+  <button onclick="lGetFindings()">Load Findings</button>
+  <div id="l-run-summary" style="margin:12px 0"></div>
+  <div id="l-med-pills" style="margin:8px 0"></div>
+  <div id="l-concern-cards"></div>
+  <div id="l-action-box" style="margin:16px 0;padding:14px;background:#f9fafb;border-radius:8px;display:none"></div>
+  <button class="success" onclick="lConfirmFindings()">Acknowledge Findings</button>
+  <pre id="l-out5"></pre>
+  <h4 style="margin-top:24px">Pipeline Log Viewer</h4>
+  <button onclick="lGetLogs()">Load Logs</button>
+  <pre id="l-logs" style="max-height:400px;overflow-y:auto"></pre>
+</div>
+
+<script>
+// ── Longitudinal state ────────────────────────────────────────────────────────
+var _lEventId = null, _lRunId = null, _lPollTimer = null, _lReconData = null;
+var _lFileRowCount = 0;
+
+function lH() { return { 'Authorization': 'Bearer ' + document.getElementById('l-tok').value.trim() }; }
+function lPid() { return document.getElementById('l-pid').value.trim(); }
+function lBase() { return 'http://localhost:8000'; }
+
+// ── Screen L1: Dynamic file rows ──────────────────────────────────────────────
+function lAddFileRow() {
+  _lFileRowCount++;
+  var n = _lFileRowCount;
+  var optional = n > 1 ? ' (optional)' : '';
+  var row = document.createElement('div');
+  row.id = 'l-file-row-' + n;
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap';
+  row.innerHTML =
+    '<select id="l-type' + n + '" style="flex:0 0 160px">' +
+      '<option value="prescription">Prescription</option>' +
+      '<option value="lab_report">Lab Report</option>' +
+      '<option value="discharge_summary">Discharge Summary</option>' +
+      '<option value="other">Other</option>' +
+    '</select>' +
+    '<input type="file" id="l-file' + n + '" style="flex:1;min-width:200px" />' +
+    (n > 1 ? '<button type="button" onclick="lRemoveFileRow(' + n + ')" style="background:#ef4444;padding:4px 10px;font-size:12px">✕</button>' : '');
+  document.getElementById('l-file-rows').appendChild(row);
+}
+
+function lRemoveFileRow(n) {
+  var row = document.getElementById('l-file-row-' + n);
+  if (row) row.remove();
+}
+
+// Start with 3 rows
+(function() { lAddFileRow(); lAddFileRow(); lAddFileRow(); })();
+
+async function lUpload() {
+  var pid = lPid();
+  if (!pid) { alert('Patient ID required'); return; }
+  var fd = new FormData();
+  var types = [];
+  var hasFile = false;
+  for (var i = 1; i <= _lFileRowCount; i++) {
+    var fileEl = document.getElementById('l-file' + i);
+    var typeEl = document.getElementById('l-type' + i);
+    if (!fileEl || !typeEl) continue;
+    var f = fileEl.files[0];
+    if (!f) continue;
+    fd.append('files', f, f.name);
+    types.push(typeEl.value);
+    hasFile = true;
+  }
+  if (!hasFile) { alert('Upload at least one file'); return; }
+  fd.append('file_types', JSON.stringify(types));
+  document.getElementById('l-out1').textContent = 'Uploading ' + types.length + ' file(s)...';
+  try {
+    var r = await fetch(lBase() + '/api/longitudinal/upload/' + pid, { method: 'POST', headers: lH(), body: fd });
+    var d = await r.json();
+    document.getElementById('l-out1').textContent = JSON.stringify(d, null, 2);
+    if (d.upload_event_id) {
+      _lEventId = d.upload_event_id;
+      document.getElementById('l-out2').textContent = 'upload_event_id: ' + _lEventId + '\nPolling...';
+      activateStep('step-l2');
+      lPoll(['reconciling'], 'l-out2', lOnRecon);
+    }
+  } catch(e) { document.getElementById('l-out1').textContent = 'Error: ' + e; }
+}
+
+function lPoll(targets, outId, onReached) {
+  if (!_lEventId) { alert('No upload event. Upload first.'); return; }
+  if (_lPollTimer) clearInterval(_lPollTimer);
+  var el = document.getElementById(outId);
+  _lPollTimer = setInterval(async function() {
+    try {
+      var r = await fetch(lBase() + '/api/longitudinal/status/' + lPid() + '/' + _lEventId, { headers: lH() });
+      var d = await r.json();
+      el.textContent = 'Status: ' + d.processing_status + (d.error_message ? '\nError: ' + d.error_message : '');
+      if (targets.indexOf(d.processing_status) >= 0) { clearInterval(_lPollTimer); if (onReached) onReached(d); }
+      if (d.processing_status === 'failed') { clearInterval(_lPollTimer); el.textContent = 'FAILED: ' + (d.error_message || 'unknown error'); }
+    } catch(e) { el.textContent = 'Poll error: ' + e; }
+  }, 3000);
+}
+
+function lOnRecon(d) {
+  document.getElementById('l-out2').textContent += '\n✅ Status: reconciling — go to Screen L3 and click Load Reconciliation';
+  activateStep('step-l3');
+}
+function lOnReady(d) {
+  document.getElementById('l-out4').textContent += '\n✅ Status: ready — go to Screen L5 and click Load Findings';
+  activateStep('step-l5');
+}
+
+// ── Screen L3: Medication reconciliation — onboarding-style cards ─────────────
+var _lMedSelections = {}; // key → { guardian_action, new_dose, new_freq, fixed_name }
+
+// Render one onboarding-style med card. key = unique string for this card.
+function lMedCard(key, brandName, genericName, dose, freq, contextMsg, contextColor) {
+  var displayName = brandName || genericName || 'Unknown';
+  var ctx = contextMsg
+    ? '<div style="font-size:12px;padding:5px 10px;border-radius:6px;margin-bottom:8px;background:' + (contextColor||'#eff6ff') + ';color:#1e40af">' + contextMsg + '</div>'
+    : '';
+  return '<div class="med-card" id="l-medcard-' + key + '">' + ctx +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+      '<div style="flex:1;min-width:0">' +
+        '<strong style="font-size:15px">' + escHtml(displayName) + '</strong>' +
+        (genericName && genericName !== brandName ? '<span style="color:#6b7280;font-size:12px"> (' + escHtml(genericName) + ')</span>' : '') +
+        '<div style="display:flex;gap:6px;margin-top:6px">' +
+          '<input id="l-dose-' + key + '" placeholder="Dose (e.g. 500mg)" style="width:48%;font-size:12px;padding:4px 8px" value="' + escHtml(dose||'') + '">' +
+          '<input id="l-freq-' + key + '" placeholder="Frequency" style="width:48%;font-size:12px;padding:4px 8px" value="' + escHtml(freq||'') + '">' +
+        '</div>' +
+      '</div>' +
+      '<div style="flex-shrink:0;margin-left:14px;text-align:center">' +
+        '<div style="font-size:11px;color:#6b7280;margin-bottom:4px">Currently taking?</div>' +
+        '<div style="display:flex;gap:4px">' +
+          '<button onclick="lSetTaking(\'' + key + '\',\'yes\')" id="l-btn-yes-' + key + '" style="padding:5px 10px;font-size:12px;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer">✓ Yes</button>' +
+          '<button onclick="lSetTaking(\'' + key + '\',\'no\')" id="l-btn-no-' + key + '" style="padding:5px 10px;font-size:12px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer">✗ No</button>' +
+          '<button onclick="lSetTaking(\'' + key + '\',\'not_sure\')" id="l-btn-ns-' + key + '" style="padding:5px 10px;font-size:12px;background:#6b7280;color:white;border:none;border-radius:6px;cursor:pointer">? Not sure</button>' +
+        '</div>' +
+        '<button onclick="lToggleEdit(\'' + key + '\')" style="margin-top:4px;padding:4px 10px;font-size:11px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;cursor:pointer;width:100%">✎ Fix name</button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="l-editpanel-' + key + '" style="display:none;margin-top:10px;padding:10px;background:#f9fafb;border-radius:6px">' +
+      '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Correct the drug name if we got it wrong:</div>' +
+      '<input placeholder="Correct drug name" style="width:100%" id="l-editname-' + key + '" value="' + escHtml(displayName) + '">' +
+    '</div>' +
+  '</div>';
+}
+
+function lSetTaking(key, status) {
+  var guardianMap = { yes: 'still_taking', no: 'no_stopped', not_sure: 'not_sure' };
+  if (!_lMedSelections[key]) _lMedSelections[key] = {};
+  _lMedSelections[key].guardian_action = guardianMap[status] || 'still_taking';
+  var card = document.getElementById('l-medcard-' + key);
+  if (card) card.style.opacity = status === 'no' ? '0.55' : '1';
+  ['yes','no','ns'].forEach(function(b) {
+    var el = document.getElementById('l-btn-' + b + '-' + key);
+    if (el) el.style.opacity = '0.45';
+  });
+  var selMap = { yes:'yes', no:'no', not_sure:'ns' };
+  var sel = document.getElementById('l-btn-' + (selMap[status]||'yes') + '-' + key);
+  if (sel) sel.style.opacity = '1';
+}
+
+function lToggleEdit(key) {
+  var panel = document.getElementById('l-editpanel-' + key);
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function lGetRecon() {
+  if (!_lEventId) { alert('No upload event.'); return; }
+  var r = await fetch(lBase() + '/api/longitudinal/medication_reconciliation/' + lPid() + '/' + _lEventId, { headers: lH() });
+  _lReconData = await r.json();
+  _lMedSelections = {};
+
+  var existingMeds = _lReconData.existing_medications || [];
+  var transitions   = _lReconData.newly_extracted_medications || [];
+  var continued     = _lReconData.continued_medications || 0;
+
+  // ── Section 1: Existing medications ────────────────────────────────────────
+  var existEl   = document.getElementById('l-existing-meds');
+  var existList = document.getElementById('l-existing-meds-list');
+  if (existingMeds.length > 0) {
+    var existHtml = '<p style="color:#6b7280;font-size:12px;margin:0 0 8px">These medications are currently recorded for this patient (' + existingMeds.length + '). Please confirm whether the patient is still taking each one.</p>';
+    existingMeds.forEach(function(m) {
+      var key = 'exist-' + m.medication_id;
+      _lMedSelections[key] = { guardian_action: 'still_taking', medication_id: m.medication_id, is_existing: true };
+      existHtml += lMedCard(key, m.drug_name_brand, m.drug_name_generic, m.dose_text, m.frequency, null, null);
+    });
+    existList.innerHTML = existHtml;
+    existEl.style.display = 'block';
+  } else {
+    existEl.style.display = 'none';
+  }
+
+  // ── Section 2: New & changed medications from uploaded documents ────────────
+  var newEl   = document.getElementById('l-new-meds');
+  var newList = document.getElementById('l-new-meds-list');
+
+  var contextMessages = {
+    added:              function(t) { return '✦ We can see this medication was added in the new documents' + (t.source_document ? ' (' + t.source_document + ')' : '') + '.'; },
+    removed:            function(t) { return '✦ We did not find <strong>' + escHtml(t.drug_name_brand || t.drug_name_generic || '') + '</strong> in the new documents. Are they still taking it?'; },
+    dose_changed:       function(t) { return '✦ The dosage for this medication has changed' + (t.prior_dose_mg ? ' from <strong>' + t.prior_dose_mg + ' mg</strong>' : '') + (t.new_dose_mg ? ' to <strong>' + t.new_dose_mg + ' mg</strong>' : '') + '.'; },
+    frequency_changed:  function(t) { return '✦ The frequency for this medication has changed' + (t.prior_frequency ? ' from <strong>' + escHtml(t.prior_frequency) + '</strong>' : '') + (t.new_frequency ? ' to <strong>' + escHtml(t.new_frequency) + '</strong>' : '') + '.'; },
+    status_changed:     function(t) { return '✦ The status of this medication has changed in the new documents.'; },
+    restarted:          function(t) { return '✦ This medication appears to have been restarted in the new documents.'; },
+  };
+  var contextBg = { added:'#f0fdf4', removed:'#fef9c3', dose_changed:'#eff6ff', frequency_changed:'#eff6ff', status_changed:'#fffbeb', restarted:'#f0fdf4' };
+
+  if (transitions.length > 0) {
+    var newHtml = '';
+    transitions.forEach(function(t) {
+      var tid = t.transition_id;
+      var key = 'trans-' + tid;
+      _lMedSelections[key] = { guardian_action: 'still_taking', transition_id: tid };
+      var ctxFn = contextMessages[t.transition_type];
+      var ctxMsg = ctxFn ? ctxFn(t) : ('✦ ' + t.transition_type);
+      var bg = contextBg[t.transition_type] || '#eff6ff';
+      var dose = t.new_dose_mg ? String(t.new_dose_mg) + ' mg' : '';
+      var freq = t.new_frequency || '';
+      newHtml += lMedCard(key, t.drug_name_brand, t.drug_name_generic, dose, freq, ctxMsg, bg);
+    });
+    if (continued > 0) newHtml += '<p style="color:#6b7280;font-size:12px;margin:10px 0 0">ℹ ' + continued + ' medication(s) from the new documents match existing records with no changes — nothing to confirm for those.</p>';
+    newList.innerHTML = newHtml;
+    newEl.style.display = 'block';
+  } else {
+    newList.innerHTML = '<p style="color:#6b7280;font-style:italic">' + (continued > 0 ? continued + ' medication(s) found — all match existing records with no changes. Nothing to confirm.' : 'No new or changed medications found in the uploaded documents.') + '</p>';
+    newEl.style.display = 'block';
+  }
+
+  document.getElementById('l-confirm-recon-btn').style.display = 'block';
+  document.getElementById('l-out3').textContent = 'Loaded: ' + existingMeds.length + ' existing | ' + transitions.length + ' new/changed | ' + continued + ' continued';
+}
+
+async function lConfirmRecon() {
+  if (!_lReconData || !_lEventId) { alert('Load reconciliation first.'); return; }
+
+  // Collect transition confirmations (for new/changed meds only — backend only accepts transition_ids)
+  var confs = [];
+  Object.keys(_lMedSelections).forEach(function(key) {
+    var s = _lMedSelections[key];
+    if (!s.transition_id) return; // skip existing-med-only rows
+    var conf = { transition_id: s.transition_id, action: 'confirm', guardian_action: s.guardian_action || 'still_taking' };
+    var doseEl = document.getElementById('l-dose-' + key);
+    var freqEl = document.getElementById('l-freq-' + key);
+    if (doseEl && doseEl.value.trim()) conf.new_dose_mg = parseFloat(doseEl.value) || null;
+    if (freqEl && freqEl.value.trim()) conf.new_frequency = freqEl.value.trim();
+    confs.push(conf);
+  });
+
+  document.getElementById('l-out3').textContent = 'Confirming ' + confs.length + ' transition(s)...';
+  var r = await fetch(lBase() + '/api/longitudinal/confirm_reconciliation/' + lPid() + '/' + _lEventId, {
+    method: 'POST', headers: Object.assign({}, lH(), {'Content-Type': 'application/json'}),
+    body: JSON.stringify({ confirmations: confs })
+  });
+  var d = await r.json();
+  document.getElementById('l-out3').textContent = JSON.stringify(d, null, 2);
+  if (d.status === 'reasoning_running') {
+    document.getElementById('l-out4').textContent = 'Reasoning started...\nPolling every 3s...';
+    activateStep('step-l4');
+    lPoll(['ready'], 'l-out4', lOnReady);
+  }
+}
+
+// ── Screen L5: Findings ───────────────────────────────────────────────────────
+async function lGetFindings() {
+  if (!_lEventId) { alert('No upload event.'); return; }
+  var r = await fetch(lBase() + '/api/longitudinal/findings/' + lPid() + '/' + _lEventId, { headers: lH() });
+  var d = await r.json();
+  document.getElementById('l-out5').textContent = JSON.stringify(d, null, 2);
+  _lRunId = d.run_id || null;
+
+  // Run summary pills
+  var rs = d.run_summary || {};
+  document.getElementById('l-run-summary').innerHTML =
+    '<b>Run Summary:</b> ' +
+    '<span class="summary-pill pill-red">New: ' + (rs.findings_new||0) + '</span>' +
+    '<span class="summary-pill pill-amber">Escalated: ' + (rs.findings_escalated||0) + '</span>' +
+    '<span class="summary-pill pill-blue">Resolved: ' + (rs.findings_resolved||0) + '</span>' +
+    '<span class="summary-pill pill-gray">Recurring (suppressed): ' + (rs.findings_recurring_suppressed||0) + '</span>';
+
+  // Medication change pills
+  var mc = d.medication_changes || [];
+  if (mc.length > 0) {
+    var mcHtml = '<b>Medication Changes (' + mc.length + '):</b> ';
+    mc.forEach(function(m) {
+      mcHtml += '<span class="summary-pill pill-blue">' + escHtml(m.drug_name_brand || m.drug_name_generic || '') + ': ' + escHtml(m.transition_type) + '</span>';
+    });
+    document.getElementById('l-med-pills').innerHTML = mcHtml;
+  }
+
+  // Concern cards
+  var cards = '';
+  (d.concerns || []).forEach(function(c) {
+    var isNudge = c.is_nudge;
+    var pri = c.priority || 'for_your_awareness';
+    var cat = c.concern_category || 'new';
+    var catColors = {new:'#1e40af',escalated:'#991b1b',resolved:'#166534',improved:'#854d0e',nudge:'#374151'};
+    cards += '<div class="concern-card ' + pri + '" style="' + (isNudge ? 'opacity:0.8;' : '') + '">' +
+      (isNudge ? '<span class="concern-badge badge-for_your_awareness">NUDGE</span>' : '') +
+      '<span class="concern-badge" style="background:#e0e7ff;color:' + (catColors[cat]||'#374151') + '">' + cat.toUpperCase() + '</span> ' +
+      '<span class="concern-badge badge-' + pri + '">' + pri.replace(/_/g,' ') + '</span>' +
+      '<div style="font-weight:700;margin:8px 0 4px">' + escHtml(c.title) + '</div>' +
+      '<p style="margin:4px 0;font-size:13px;color:#4b5563">' + escHtml(c.summary) + '</p>' +
+      '<p style="margin:4px 0;font-size:12px"><b>Found:</b> ' + escHtml(c.what_was_found) + '</p>' +
+      '<p style="margin:4px 0;font-size:12px"><b>Why it matters:</b> ' + escHtml(c.why_it_matters) + '</p>' +
+      '<p style="margin:4px 0;font-size:12px"><b>What to do:</b> ' + escHtml(c.what_to_do) + '</p>' +
+      '</div>';
+  });
+  document.getElementById('l-concern-cards').innerHTML = cards || '<p style="color:#6b7280;font-style:italic">No concern cards generated.</p>';
+
+  // Action summary
+  var as_ = d.action_summary || {};
+  var abox = document.getElementById('l-action-box');
+  abox.style.display = 'block';
+  var aHtml = '<b style="font-size:14px">Action Summary</b><div style="margin-top:10px">';
+  if ((as_.do_now||[]).length > 0) {
+    aHtml += '<div style="margin-bottom:8px"><span style="color:#dc2626;font-weight:600">Do Now (' + as_.do_now.length + ')</span>';
+    as_.do_now.forEach(function(a) { aHtml += '<div style="font-size:12px;margin:4px 0 0 12px">• ' + escHtml(a.action) + '</div>'; });
+    aHtml += '</div>';
+  }
+  if ((as_.follow_up||[]).length > 0) {
+    aHtml += '<div style="margin-bottom:8px"><span style="color:#d97706;font-weight:600">Follow Up (' + as_.follow_up.length + ')</span>';
+    as_.follow_up.forEach(function(a) { aHtml += '<div style="font-size:12px;margin:4px 0 0 12px">• ' + escHtml(a.action) + '</div>'; });
+    aHtml += '</div>';
+  }
+  if ((as_.ongoing_monitoring||[]).length > 0) {
+    aHtml += '<div style="margin-bottom:8px"><span style="color:#1a56db;font-weight:600">Ongoing Monitoring (' + as_.ongoing_monitoring.length + ')</span>';
+    as_.ongoing_monitoring.forEach(function(a) { aHtml += '<div style="font-size:12px;margin:4px 0 0 12px">• ' + escHtml(a.action) + '</div>'; });
+    aHtml += '</div>';
+  }
+  if ((as_.resolved_since_last_upload||[]).length > 0) {
+    aHtml += '<div><span style="color:#16a34a;font-weight:600">Resolved Since Last Upload (' + as_.resolved_since_last_upload.length + ')</span>';
+    as_.resolved_since_last_upload.forEach(function(a) { aHtml += '<div style="font-size:12px;margin:4px 0 0 12px">• ' + escHtml(a.action) + '</div>'; });
+    aHtml += '</div>';
+  }
+  if (!(as_.do_now||[]).length && !(as_.follow_up||[]).length && !(as_.ongoing_monitoring||[]).length) {
+    aHtml += '<p style="color:#6b7280;font-size:12px;font-style:italic">No action items generated.</p>';
+  }
+  aHtml += '</div>';
+  abox.innerHTML = aHtml;
+}
+
+async function lConfirmFindings() {
+  if (!_lEventId) { alert('No upload event.'); return; }
+  var r = await fetch(lBase() + '/api/longitudinal/confirm_findings/' + lPid() + '/' + _lEventId, { method: 'POST', headers: lH() });
+  var d = await r.json();
+  document.getElementById('l-out5').textContent = 'CONFIRMED: ' + d.concerns_acknowledged + ' concerns acknowledged.';
+}
+
+async function lGetLogs() {
+  if (!_lRunId) {
+    var runId = prompt('Paste run_id (visible in findings JSON as "run_id"):');
+    if (!runId) return;
+    _lRunId = runId;
+  }
+  var r = await fetch(lBase() + '/api/longitudinal/logs/' + _lRunId, { headers: lH() });
+  var d = await r.json();
+  var lines = (d.logs || []).map(function(l) { return '[' + l.level + '] ' + l.phase + ': ' + l.event + (l.detail && Object.keys(l.detail).length ? ' — ' + JSON.stringify(l.detail) : ''); });
+  document.getElementById('l-logs').textContent = lines.join('\n') || 'No logs found.';
+}
+
+function activateStep(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+</script>
+</body>
+</html>
