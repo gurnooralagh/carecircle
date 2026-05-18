@@ -21,7 +21,7 @@ interface RawDoc {
   document_type: string
   original_filename: string
   extraction_status: string
-  created_at: string
+  uploaded_at: string
 }
 
 interface DocWithUrl extends RawDoc {
@@ -36,10 +36,10 @@ export function DocumentsTab() {
     queryFn: async (): Promise<DocWithUrl[]> => {
       const { data, error } = await supabase
         .from('documents')
-        .select('id, document_type, original_filename, extraction_status, created_at')
+        .select('id, document_type, original_filename, extraction_status, uploaded_at')
         .eq('patient_id', patient_id)
         .eq('is_deleted', false)
-        .order('created_at', { ascending: false })
+        .order('uploaded_at', { ascending: false })
 
       if (error) throw new Error(error.message)
       if (!data || data.length === 0) return []
@@ -139,7 +139,7 @@ function DocumentCard({ doc }: { doc: DocWithUrl }) {
         <p className="text-sm font-medium text-text-primary truncate">{doc.original_filename}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <span className="text-xs text-text-muted">
-            Uploaded {formatDate(doc.created_at)}
+            Uploaded {formatDate(doc.uploaded_at)}
           </span>
         </div>
         <span
