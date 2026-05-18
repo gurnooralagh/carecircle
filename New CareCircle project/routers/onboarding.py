@@ -163,7 +163,14 @@ async def submit_onboarding(
     # 7. Upload files
     for i, uploaded_file in enumerate(files):
         file_bytes = await uploaded_file.read()
-        doc_type = file_types_list[i] if i < len(file_types_list) else "other"
+        _raw_type = file_types_list[i] if i < len(file_types_list) else "other"
+        _type_map = {
+            "Prescription": "prescription",
+            "Lab Report": "lab_report",
+            "Discharge Summary": "discharge_summary",
+            "Other": "other",
+        }
+        doc_type = _type_map.get(_raw_type, _raw_type.lower().replace(" ", "_"))
         storage_path = upload_file(
             db=db,
             patient_id=patient_id,
