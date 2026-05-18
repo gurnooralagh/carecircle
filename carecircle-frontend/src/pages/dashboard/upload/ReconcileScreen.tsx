@@ -11,29 +11,141 @@ import type { MedicationReconciliation, NewMedicationReconcile, ExistingMedicati
 
 type GuardianAction = 'still_taking' | 'stopped' | 'not_sure'
 
-const CONTEXT_MSG: Record<string, (t: NewMedicationReconcile) => string> = {
-  added:              (t) => `We can see this medication was added in the new documents${t.source_document ? ` (${t.source_document})` : ''}.`,
-  removed:            (t) => `We did not find ${t.drug_name_brand || t.drug_name_generic || 'this medication'} in the new documents. Are they still taking it?`,
-  dose_changed:       (t) => `The dosage for this medication has changed${t.prior_dose_mg ? ` from ${t.prior_dose_mg}` : ''}${t.new_dose_mg ? ` to ${t.new_dose_mg}` : ''}.`,
-  frequency_changed:  (t) => `The frequency for this medication has changed${t.prior_frequency ? ` from ${t.prior_frequency}` : ''}${t.new_frequency ? ` to ${t.new_frequency}` : ''}.`,
-  restarted:          () => `This medication appears to have been restarted in the new documents.`,
+// ─── Merged card structure ────────────────────────────────────────────────────
+
+interface MergedCard {
+  key: string
+  // Display
+  displayName: string
+  genericName: string | null
+  sourceDocument: string | null
+  // Editable fields (seeded from transition or existing med)
+  initialDose: string
+  initialFrequency: string
+  // Prompt
+  contextMsg: string
+  contextBg: string
+  // Submission (only present when there's a transition)
+  transitionId: string | null
+  defaultGuardianAction: GuardianAction
 }
 
-const CONTEXT_BG: Record<string, string> = {
-  added:             '#f0fdf4',
-  removed:           '#fef9c3',
-  dose_changed:      '#eff6ff',
-  frequency_changed: '#eff6ff',
-  restarted:         '#f0fdf4',
+// ─── Build merged list ────────────────────────────────────────────────────────
+
+function normName(s: string | undefined | null): string {
+  return (s || '').toLowerCase().trim()
 }
 
-const DEFAULT_GUARDIAN: Record<string, GuardianAction> = {
-  added:             'still_taking',
-  removed:           'stopped',
-  dose_changed:      'still_taking',
-  frequency_changed: 'still_taking',
-  restarted:         'still_taking',
+function matchesExisting(
+  t: NewMedicationReconcile,
+  med: ExistingMedicationReconcile,
+): boolean {
+  const tb = normName(t.drug_name_brand)
+  const tg = normName(t.drug_name_generic)
+  const mb = normName(med.drug_name_brand)
+  const mg = normName(med.drug_name_generic)
+  return !!(
+    (tb && mb && tb === mb) ||
+    (tg && mg && tg === mg) ||
+    (tb && mg && tb === mg) ||
+    (tg && mb && tg === mb)
+  )
 }
+
+function buildCards(
+  existing: ExistingMedicationReconcile[],
+  transitions: NewMedicationReconcile[],
+): MergedCard[] {
+  const usedTransitionIds = new Set<string>()
+  const cards: MergedCard[] = []
+
+  // 1. One card per existing med — find matching transition if any
+  for (const med of existing) {
+    const matched = transitions.find((t) => {
+      if (usedTransitionIds.has(t.transition_id)) return false
+      return matchesExisting(t, med)
+    })
+    if (matched) usedTransitionIds.add(matched.transition_id)
+
+    const displayName = med.drug_name_brand || med.drug_name_generic || 'Unknown'
+    const genericName =
+      med.drug_name_generic && med.drug_name_generic !== displayName
+        ? med.drug_name_generic
+        : null
+
+    let contextMsg: string
+    let contextBg: string
+    let defaultGuardian: GuardianAction = 'still_taking'
+
+    if (!matched) {
+      contextMsg = 'This was not found in your new documents. Are you still taking it?'
+      contextBg = '#FFF7ED'
+    } else if (matched.transition_type === 'removed') {
+      contextMsg = 'This was asked to stop in your documents. Are you still taking it?'
+      contextBg = '#FEF9C3'
+      defaultGuardian = 'stopped'
+    } else if (matched.transition_type === 'dose_changed') {
+      const from = matched.prior_dose_mg ?? '?'
+      const to = matched.new_dose_mg ?? '?'
+      contextMsg = `Same medication but dosage changed from ${from} to ${to}.`
+      contextBg = '#EFF6FF'
+    } else if (matched.transition_type === 'frequency_changed') {
+      const from = matched.prior_frequency ?? '?'
+      const to = matched.new_frequency ?? '?'
+      contextMsg = `Same medication but frequency changed from ${from} to ${to}.`
+      contextBg = '#EFF6FF'
+    } else if (matched.transition_type === 'restarted') {
+      contextMsg = 'This medication appears to have been restarted in your documents.'
+      contextBg = '#F0FDF4'
+    } else {
+      contextMsg = 'This appears to be the same as in your records. Are you still taking it?'
+      contextBg = '#F9FAFB'
+    }
+
+    cards.push({
+      key: `existing-${med.medication_id}`,
+      displayName,
+      genericName,
+      sourceDocument: matched?.source_document ?? null,
+      initialDose: matched?.new_dose_mg ?? med.dose_text ?? '',
+      initialFrequency: matched?.new_frequency ?? med.frequency ?? '',
+      contextMsg,
+      contextBg,
+      transitionId: matched?.transition_id ?? null,
+      defaultGuardianAction: defaultGuardian,
+    })
+  }
+
+  // 2. Added transitions not matched to any existing med
+  for (const t of transitions) {
+    if (usedTransitionIds.has(t.transition_id)) continue
+    if (t.transition_type !== 'added' && t.transition_type !== 'restarted') continue
+
+    const displayName = t.drug_name_brand || t.drug_name_generic || 'Unknown'
+    const genericName =
+      t.drug_name_generic && t.drug_name_generic !== displayName
+        ? t.drug_name_generic
+        : null
+
+    cards.push({
+      key: `new-${t.transition_id}`,
+      displayName,
+      genericName,
+      sourceDocument: t.source_document ?? null,
+      initialDose: t.new_dose_mg ?? '',
+      initialFrequency: t.new_frequency ?? '',
+      contextMsg: 'This is a new medication found in your documents.',
+      contextBg: '#F0FDF4',
+      transitionId: t.transition_id,
+      defaultGuardianAction: 'still_taking',
+    })
+    usedTransitionIds.add(t.transition_id)
+  }
+
+  return cards
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function ReconcileScreen() {
   const { uploadEventId } = useParams<{ uploadEventId: string }>()
@@ -42,6 +154,8 @@ export function ReconcileScreen() {
   const toast = useToast()
 
   const [guardianActions, setGuardianActions] = useState<Record<string, GuardianAction>>({})
+  const [doses, setDoses] = useState<Record<string, string>>({})
+  const [frequencies, setFrequencies] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -56,17 +170,26 @@ export function ReconcileScreen() {
     retry: 2,
   })
 
-  const getGuardianAction = (id: string, type: string): GuardianAction =>
-    guardianActions[id] ?? (DEFAULT_GUARDIAN[type] ?? 'still_taking')
+  const cards = data
+    ? buildCards(data.existing_medications ?? [], data.newly_extracted_medications ?? [])
+    : []
+
+  const getGuardian = (card: MergedCard): GuardianAction =>
+    guardianActions[card.key] ?? card.defaultGuardianAction
 
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      const confirmations = (data?.newly_extracted_medications ?? []).map((t) => ({
-        transition_id: t.transition_id,
-        action: 'confirm' as const,
-        guardian_action: getGuardianAction(t.transition_id, t.transition_type),
-      }))
+      // Only submit cards that have a transition_id
+      const confirmations = cards
+        .filter((c) => c.transitionId)
+        .map((c) => ({
+          transition_id: c.transitionId!,
+          action: 'confirm' as const,
+          guardian_action: getGuardian(c),
+          new_dose_mg: doses[c.key] || undefined,
+          new_frequency: frequencies[c.key] || undefined,
+        }))
 
       await api.post(
         `/api/longitudinal/confirm_reconciliation/${patient_id}/${uploadEventId}`,
@@ -74,15 +197,11 @@ export function ReconcileScreen() {
       )
       navigate(`/dashboard/upload/processing/${uploadEventId}`)
     } catch {
-      toast.error('Could not submit reconciliation. Please try again.')
+      toast.error('Could not submit. Please try again.')
     } finally {
       setSubmitting(false)
     }
   }
-
-  const transitions = data?.newly_extracted_medications ?? []
-  const existingMeds = data?.existing_medications ?? []
-  const continuedCount = data?.continued_medications ?? 0
 
   return (
     <PageTransition className="px-4 py-6 max-w-xl mx-auto">
@@ -90,18 +209,22 @@ export function ReconcileScreen() {
         className="text-2xl font-normal text-text-primary mb-1"
         style={{ fontFamily: 'Fraunces, serif' }}
       >
-        Review medications
+        Your medications
       </h2>
       <p className="text-sm text-text-secondary mb-6">
-        We compared your new documents with existing records. Confirm what's changed.
+        Tell us which medications you are still taking and which you have stopped.
       </p>
 
       {isLoading && <SkeletonList count={3} />}
 
       {isError && (
         <div className="bg-[#FEF2F2] border border-[#DC262630] rounded-xl p-5 text-center mb-4">
-          <p className="text-sm font-semibold text-severity-critical mb-1">Couldn't load medication changes</p>
-          <p className="text-sm text-severity-critical opacity-80 mb-4">Something went wrong. Please try again.</p>
+          <p className="text-sm font-semibold text-severity-critical mb-1">
+            Couldn't load medications
+          </p>
+          <p className="text-sm text-severity-critical opacity-80 mb-4">
+            Something went wrong. Please try again.
+          </p>
           <button
             onClick={() => refetch()}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#DC262630] text-severity-critical text-sm font-medium"
@@ -112,59 +235,31 @@ export function ReconcileScreen() {
       )}
 
       {!isLoading && !isError && data && (
-        <>
-          {/* Section 1: Active medications */}
-          {existingMeds.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
-                Active medications ({existingMeds.length})
-              </h3>
-              <div className="flex flex-col gap-2">
-                {existingMeds.map((med) => (
-                  <ExistingMedRow key={med.medication_id} med={med} />
-                ))}
-              </div>
+        <div className="flex flex-col gap-4 mb-6">
+          {cards.length === 0 ? (
+            <div className="bg-bg-card border border-border rounded-xl p-5 text-center">
+              <p className="text-base font-semibold text-text-primary mb-1">No medications found</p>
+              <p className="text-sm text-text-secondary">
+                No medications were recorded or extracted from your documents.
+              </p>
             </div>
+          ) : (
+            cards.map((card) => (
+              <MedCard
+                key={card.key}
+                card={card}
+                guardianAction={getGuardian(card)}
+                dose={doses[card.key] ?? card.initialDose}
+                frequency={frequencies[card.key] ?? card.initialFrequency}
+                onGuardianChange={(a) =>
+                  setGuardianActions((p) => ({ ...p, [card.key]: a }))
+                }
+                onDoseChange={(v) => setDoses((p) => ({ ...p, [card.key]: v }))}
+                onFrequencyChange={(v) => setFrequencies((p) => ({ ...p, [card.key]: v }))}
+              />
+            ))
           )}
-
-          {/* Section 2: New & changed */}
-          <div className="mb-6">
-            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
-              New &amp; changed medications
-            </h3>
-
-            {transitions.length === 0 ? (
-              <div className="bg-bg-card border border-border rounded-xl p-5 text-center">
-                <p className="text-base font-semibold text-text-primary mb-1">No changes detected</p>
-                <p className="text-sm text-text-secondary">
-                  {continuedCount > 0
-                    ? `${continuedCount} medication${continuedCount !== 1 ? 's' : ''} found — all match existing records with no changes.`
-                    : 'No new or changed medications were found in the uploaded documents.'}
-                </p>
-              </div>
-            ) : (
-              <>
-                {continuedCount > 0 && (
-                  <p className="text-xs text-text-muted mb-3">
-                    {continuedCount} medication{continuedCount !== 1 ? 's' : ''} matched existing records unchanged.
-                  </p>
-                )}
-                <div className="flex flex-col gap-4">
-                  {transitions.map((t) => (
-                    <TransitionCard
-                      key={t.transition_id}
-                      transition={t}
-                      guardianAction={getGuardianAction(t.transition_id, t.transition_type)}
-                      onGuardianActionChange={(a) =>
-                        setGuardianActions((p) => ({ ...p, [t.transition_id]: a }))
-                      }
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </>
+        </div>
       )}
 
       <Button fullWidth size="lg" loading={submitting} disabled={isLoading} onClick={handleSubmit}>
@@ -174,71 +269,78 @@ export function ReconcileScreen() {
   )
 }
 
-function ExistingMedRow({ med }: { med: ExistingMedicationReconcile }) {
-  const name = med.drug_name_brand || med.drug_name_generic || 'Unknown'
-  const generic =
-    med.drug_name_generic && med.drug_name_generic !== name ? med.drug_name_generic : null
-  const doseInfo = [med.dose_text, med.frequency].filter(Boolean).join(' · ')
+// ─── Med card ─────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="bg-bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-text-primary">
-          {name}
-          {generic && (
-            <span className="text-xs font-normal text-text-muted ml-1">({generic})</span>
-          )}
-        </p>
-        {doseInfo && <p className="text-xs text-text-secondary mt-0.5">{doseInfo}</p>}
-      </div>
-      <span className="text-xs px-2 py-1 rounded-full bg-[#F0FDF4] text-[#16A34A] font-medium flex-shrink-0">
-        Active
-      </span>
-    </div>
-  )
-}
-
-function TransitionCard({
-  transition,
+function MedCard({
+  card,
   guardianAction,
-  onGuardianActionChange,
+  dose,
+  frequency,
+  onGuardianChange,
+  onDoseChange,
+  onFrequencyChange,
 }: {
-  transition: NewMedicationReconcile
+  card: MergedCard
   guardianAction: GuardianAction
-  onGuardianActionChange: (a: GuardianAction) => void
+  dose: string
+  frequency: string
+  onGuardianChange: (a: GuardianAction) => void
+  onDoseChange: (v: string) => void
+  onFrequencyChange: (v: string) => void
 }) {
-  const drugName =
-    transition.drug_name_brand || transition.drug_name_generic || 'Unknown medication'
-  const genericName =
-    transition.drug_name_generic && transition.drug_name_brand
-      ? transition.drug_name_generic
-      : null
-  const contextMsg =
-    CONTEXT_MSG[transition.transition_type]?.(transition) ??
-    `Change detected: ${transition.transition_type.replace(/_/g, ' ')}`
-  const contextBg = CONTEXT_BG[transition.transition_type] ?? '#eff6ff'
+  const isStopped = guardianAction === 'stopped'
 
   return (
-    <div className="bg-bg-card border border-border rounded-xl p-4">
-      {/* Context message */}
+    <div
+      className={`bg-bg-card border border-border rounded-xl p-4 transition-opacity ${
+        isStopped ? 'opacity-50' : ''
+      }`}
+    >
+      {/* Context prompt */}
       <p
         className="text-xs text-[#374151] rounded-lg px-3 py-2 mb-3 leading-relaxed"
-        style={{ backgroundColor: contextBg }}
+        style={{ backgroundColor: card.contextBg }}
       >
-        {contextMsg}
+        {card.contextMsg}
       </p>
 
       {/* Drug name */}
       <div className="mb-3">
         <p className="text-base font-semibold text-text-primary">
-          {drugName}
-          {genericName && (
-            <span className="text-sm font-normal text-text-muted ml-1">({genericName})</span>
+          {card.displayName}
+          {card.genericName && (
+            <span className="text-sm font-normal text-text-muted ml-1">
+              ({card.genericName})
+            </span>
           )}
         </p>
-        {transition.source_document && (
-          <p className="text-xs text-text-muted mt-0.5">From: {transition.source_document}</p>
+        {card.sourceDocument && (
+          <p className="text-xs text-text-muted mt-0.5">From: {card.sourceDocument}</p>
         )}
+      </div>
+
+      {/* Dose & frequency */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">Dose</label>
+          <input
+            type="text"
+            value={dose}
+            onChange={(e) => onDoseChange(e.target.value)}
+            placeholder="e.g. 500mg"
+            className="w-full h-9 rounded-lg border border-border bg-bg-secondary px-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent-primary transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">Frequency</label>
+          <input
+            type="text"
+            value={frequency}
+            onChange={(e) => onFrequencyChange(e.target.value)}
+            placeholder="e.g. twice daily"
+            className="w-full h-9 rounded-lg border border-border bg-bg-secondary px-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent-primary transition-colors"
+          />
+        </div>
       </div>
 
       {/* Currently taking? */}
@@ -255,7 +357,7 @@ function TransitionCard({
             <button
               key={value}
               type="button"
-              onClick={() => onGuardianActionChange(value)}
+              onClick={() => onGuardianChange(value)}
               className={`flex-1 h-8 rounded-lg border text-xs font-medium transition-all ${
                 guardianAction === value
                   ? 'bg-accent-primary border-accent-primary text-white ring-2 ring-accent-primary ring-offset-1'
