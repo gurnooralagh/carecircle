@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { ShieldCheck, RefreshCw } from 'lucide-react'
 import { ConcernCard } from '../../components/ConcernCard'
 import { Button } from '../../components/ui/Button'
@@ -17,8 +17,6 @@ export function OnboardingFindings() {
   const navigate = useNavigate()
   const { patient_id, patient_name } = usePatientStore()
   const toast = useToast()
-  const queryClient = useQueryClient()
-
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['onboarding-findings', patient_id],
     queryFn: async () => {
