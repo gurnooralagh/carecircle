@@ -1,11 +1,27 @@
+import { useEffect } from 'react'
 import { Heart, Shield, FileSearch } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
+import { supabase } from '../../lib/supabase'
+import api from '../../lib/api'
 
 interface Step1WelcomeProps {
   onNext: () => void
 }
 
 export function Step1Welcome({ onNext }: Step1WelcomeProps) {
+  // Ensure user profile exists before onboarding proceeds
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const user = data.session?.user
+      if (!user) return
+      api.post('/api/auth/set-role', {
+        role: 'guardian',
+        full_name: user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? '',
+        email: user.email ?? '',
+      }).catch(() => { /* already exists — safe to ignore */ })
+    })
+  }, [])
+
   return (
     <div className="flex flex-col items-center text-center pt-8">
       <h1
