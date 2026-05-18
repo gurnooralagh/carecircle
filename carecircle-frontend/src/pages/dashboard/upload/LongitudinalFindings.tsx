@@ -149,7 +149,7 @@ export function LongitudinalFindings() {
             <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-4">
               Updated to-do list
             </h3>
-            {data.todos.do_now && data.todos.do_now.length > 0 && (
+            {(data.todos?.do_now ?? []).length > 0 && (
               <TodoSection
                 title="Do now"
                 items={data.todos.do_now}
@@ -158,7 +158,7 @@ export function LongitudinalFindings() {
                 borderColor="#DC2626"
               />
             )}
-            {data.todos.follow_up && data.todos.follow_up.length > 0 && (
+            {(data.todos?.follow_up ?? []).length > 0 && (
               <TodoSection
                 title="Follow up"
                 items={data.todos.follow_up}
@@ -167,7 +167,7 @@ export function LongitudinalFindings() {
                 borderColor="#D97706"
               />
             )}
-            {data.todos.keep_monitoring && data.todos.keep_monitoring.length > 0 && (
+            {(data.todos?.keep_monitoring ?? []).length > 0 && (
               <TodoSection
                 title="Keep monitoring"
                 items={data.todos.keep_monitoring}
@@ -178,7 +178,7 @@ export function LongitudinalFindings() {
             )}
 
             {/* Resolved todos */}
-            {data.todos.resolved && data.todos.resolved.length > 0 && (
+            {(data.todos?.resolved ?? []).length > 0 && (
               <div className="mt-2">
                 <button
                   onClick={() => setShowResolved((v) => !v)}
@@ -187,13 +187,13 @@ export function LongitudinalFindings() {
                   <ChevronDown
                     className={`w-4 h-4 transition-transform ${showResolved ? 'rotate-180' : ''}`}
                   />
-                  {data.todos.resolved.length} completed tasks
+                  {(data.todos?.resolved ?? []).length} completed tasks
                 </button>
                 {showResolved && (
                   <TodoSection
                     title="Completed"
-                    items={data.todos.resolved}
-                    checked={new Set(data.todos.resolved.map((t) => t.todo_id))}
+                    items={data.todos?.resolved ?? []}
+                    checked={new Set((data.todos?.resolved ?? []).map((t) => t.todo_id))}
                     onToggle={() => {}}
                     borderColor="#16A34A"
                   />
