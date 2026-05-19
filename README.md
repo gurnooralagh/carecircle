@@ -24,7 +24,7 @@ A medical records management app for family caregivers. Upload prescriptions, la
 | Backend | FastAPI (Python 3.12), Uvicorn |
 | Database / auth | Supabase (PostgreSQL + Row Level Security) |
 | File storage | Supabase Storage |
-| AI | OpenRouter API (Claude models) |
+| AI | OpenRouter API - Gemini 2.0 Flash (LLM) and Open AI mini 4 (OCR) |
 | PDF extraction | pdfplumber, PyMuPDF |
 | Frontend hosting | Vercel |
 | Backend hosting | Railway |
