@@ -166,11 +166,12 @@ function AppShell() {
       setInitialised(true)
     })
 
-    // Watch for auth changes
+    // Watch for auth changes (e.g. fresh login)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session?.access_token && session.user?.id) {
           login(session.access_token, session.user.id)
+          syncPatient()
         } else {
           logout()
         }
