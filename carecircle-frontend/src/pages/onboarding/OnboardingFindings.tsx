@@ -25,6 +25,8 @@ export function OnboardingFindings() {
     },
     enabled: !!patient_id,
     retry: 2,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'ready' ? false : 3000,
   })
 
   const handleRerunAnalysis = async () => {
@@ -98,7 +100,7 @@ export function OnboardingFindings() {
           </div>
         )}
 
-        {isLoading && <SkeletonList count={4} />}
+        {(isLoading || data?.status === 'running') && <SkeletonList count={4} />}
 
         {isError && (
           <div className="bg-[#FEF2F2] border border-[#DC262630] rounded-xl p-5 text-center mb-4">
@@ -118,7 +120,7 @@ export function OnboardingFindings() {
           </div>
         )}
 
-        {!isLoading && !isError && sorted.length === 0 && (
+        {!isLoading && !isError && data?.status === 'ready' && sorted.length === 0 && (
           <EmptyState
             icon={ShieldCheck}
             title="Nothing concerning found"
@@ -126,7 +128,7 @@ export function OnboardingFindings() {
           />
         )}
 
-        {!isLoading && sorted.length > 0 && (
+        {!isLoading && data?.status === 'ready' && sorted.length > 0 && (
           <div className="flex flex-col gap-3 mb-8">
             {sorted.map((c) => (
               <ConcernCard key={c.id ?? c.title} concern={c} />
@@ -138,7 +140,7 @@ export function OnboardingFindings() {
           onClick={() => navigate('/onboarding/checklist')}
           fullWidth
           size="lg"
-          disabled={isLoading}
+          disabled={isLoading || data?.status !== 'ready'}
         >
           Continue to action plan
         </Button>

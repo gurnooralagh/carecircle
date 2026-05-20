@@ -40,6 +40,7 @@ import { PreviewNav } from './components/ui/PreviewNav'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/auth'
 import { usePatientStore } from './store/patient'
+import api from './lib/api'
 
 const PREVIEW_MODE = import.meta.env.VITE_PREVIEW_MODE === 'true'
 
@@ -137,13 +138,30 @@ function AnimatedRoutes() {
 
 function AppShell() {
   const { login, logout } = useAuthStore()
+  const { setPatient } = usePatientStore()
   const [initialised, setInitialised] = useState(false)
 
+  const syncPatient = async () => {
+    try {
+      const res = await api.get('/api/auth/me')
+      if (res.data.patient) {
+        setPatient({
+          patient_id: res.data.patient.patient_id,
+          patient_name: res.data.patient.patient_name,
+          onboarding_complete: res.data.patient.onboarding_complete,
+        })
+      }
+    } catch {
+      // no patient yet — stay on onboarding
+    }
+  }
+
   useEffect(() => {
-    // Sync Supabase session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Sync Supabase session on mount, then load patient before rendering routes
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.access_token && session.user?.id) {
         login(session.access_token, session.user.id)
+        await syncPatient()
       }
       setInitialised(true)
     })

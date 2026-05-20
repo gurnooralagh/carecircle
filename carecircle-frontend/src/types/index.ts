@@ -74,6 +74,7 @@ export interface Concern {
 }
 
 export interface FindingsResponse {
+  status?: string
   concerns: Concern[]
   concern_summary?: {
     critical_concern: number

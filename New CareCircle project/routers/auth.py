@@ -52,3 +52,42 @@ async def set_role(
         role=body.role,
         next_step="onboarding",
     )
+
+
+@router.get("/me")
+async def get_me(
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_db),
+):
+    """Returns the current user's linked patient, if one exists."""
+    profile = (
+        db.table("user_profiles").select("id")
+        .eq("auth_user_id", current_user["id"]).execute()
+    )
+    if not profile.data:
+        return {"patient": None}
+
+    guardian = (
+        db.table("patient_guardians").select("patient_id")
+        .eq("user_profile_id", profile.data[0]["id"])
+        .eq("is_primary_guardian", True)
+        .limit(1).execute()
+    )
+    if not guardian.data:
+        return {"patient": None}
+
+    patient = (
+        db.table("patients").select("id, full_name, onboarding_status")
+        .eq("id", guardian.data[0]["patient_id"]).execute()
+    )
+    if not patient.data:
+        return {"patient": None}
+
+    p = patient.data[0]
+    return {
+        "patient": {
+            "patient_id": p["id"],
+            "patient_name": p["full_name"],
+            "onboarding_complete": p["onboarding_status"] == "complete",
+        }
+    }
