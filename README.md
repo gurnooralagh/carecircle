@@ -1,6 +1,6 @@
 # CareCircle
 
-**Frontend (live):** https://carecircle-3oscwehrd-gurnooralaghs-projects.vercel.app/
+**Frontend (live):** https://carecircle-livid.vercel.app/
 
 A medical records management app for family caregivers. Upload prescriptions, lab reports, and discharge summaries for a loved one — CareCircle extracts the data, checks for drug interactions and concerning lab values, and gives you a plain-language summary with a clear action plan.
 
